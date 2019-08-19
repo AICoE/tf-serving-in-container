@@ -8,7 +8,7 @@ LABEL tensorflow_serving_github_branchtag=${TF_SERVING_VERSION_GIT_BRANCH}
 LABEL tensorflow_serving_github_commit=${TF_SERVING_VERSION_GIT_COMMIT}
 
 # provide different URL here for different versions
-ARG TF_URL=https://github.com/AICoE/tensorflow-wheels/releases/download/tensorflow_serving_api-r1.14-cpu-2019-08-14_132212/tensorflow-model-serving-r1.14-1.0-1.x86_64.rpm
+ARG TF_URL=https://github.com/AICoE/tensorflow-wheels/releases/download/tensorflow_serving_api-r1.12-cpu-2019-08-13_200846/tensorflow-model-serving-r1.12-1.0-1.x86_64.rpm
 
 # Install TF Serving pkg
 RUN yum install -y gcc gcc-c++ glibc-devel openssl-devel \
