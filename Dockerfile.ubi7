@@ -1,0 +1,46 @@
+FROM registry.access.redhat.com/ubi7/ubi:latest
+
+ARG TF_SERVING_VERSION_GIT_BRANCH=master
+ARG TF_SERVING_VERSION_GIT_COMMIT=head
+
+LABEL maintainer="smodeel@redhat.com"
+LABEL tensorflow_serving_github_branchtag=${TF_SERVING_VERSION_GIT_BRANCH}
+LABEL tensorflow_serving_github_commit=${TF_SERVING_VERSION_GIT_COMMIT}
+
+# provide different URL here for different versions
+ARG TF_URL=https://github.com/AICoE/tensorflow-wheels/releases/download/tensorflow_serving_api-r1.14-cpu-2019-08-14_132212/tensorflow-model-serving-r1.14-1.0-1.x86_64.rpm
+
+# Install TF Serving pkg
+RUN yum install -y gcc gcc-c++ glibc-devel openssl-devel \
+    && yum install -y wget tree which findutils x86info cpuid dmidecode procps \
+    && yum install -y kernel-devel make automake autoconf swig zip unzip libtool binutils \
+    && yum clean all -y \
+    && mkdir -p /usr/local/bin \
+    && wget -q ${TF_URL} \
+    && rpm -ivh tensorflow-model-serving-*.rpm
+
+
+# Expose ports
+# gRPC
+EXPOSE 8500
+
+# REST
+EXPOSE 8501
+
+# Set where models should be stored in the container
+ENV MODEL_BASE_PATH=/models
+RUN mkdir -p ${MODEL_BASE_PATH}
+
+# The only required piece is the model name in order to differentiate endpoints
+ENV MODEL_NAME=model
+
+# Create a script that runs the model server so we can use environment variables
+# while also passing in arguments from the docker command line
+RUN echo -e '#!/bin/bash \n\n \
+ls -l ${MODEL_BASE_PATH} \n\n\
+/usr/local/bin/tensorflow_model_server --port=8500 --rest_api_port=8501 \
+--model_name=${MODEL_NAME} --model_base_path=${MODEL_BASE_PATH}/${MODEL_NAME} \
+"$@"' > /usr/bin/tf_serving_entrypoint.sh \
+&& chmod +x /usr/bin/tf_serving_entrypoint.sh
+
+ENTRYPOINT ["/usr/bin/tf_serving_entrypoint.sh"]
